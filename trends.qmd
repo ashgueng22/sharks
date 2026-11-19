@@ -1,0 +1,29 @@
+---
+title: "Trends"
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+```
+
+```{r}
+attacks <- read_rds("data/attacks.rds")
+```
+
+```{r}
+attacks |>
+  # Keep activities with at least 50 total incidents
+  filter(n() >= 50, .by = Activity) |>
+  # Leave out incidents where fatality is unknown
+  filter(Fatal_clean != "Unknown") |>
+  count(Activity, Fatal_clean) |>
+  # Order activities from smallest to largest total so top activities sit at the top
+  ggplot(aes(x = n, y = fct_reorder(Activity, n, .fun = sum), fill = Fatal_clean)) +
+  geom_col() +
+  labs(
+    x = "Incidents",
+    y = NULL,
+    fill = "Outcome"
+  )
+```
