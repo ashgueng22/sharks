@@ -1,0 +1,43 @@
+---
+title: "Map"
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+library(maps)
+```
+
+```{r}
+#| cache: true
+#| message: false
+attacks <- read_csv("data/attacks_clean.csv") |>
+  mutate(
+    # Trim whitespace and lowercase country names so they match map data
+    Country_lower = str_to_lower(str_trim(Country)),
+    # Group Y and N cleanly and lump missing/messy codes into Unknown
+    Fatal_clean = case_when(
+      Fatal == "Y" ~ "Fatal",
+      Fatal == "N" ~ "Non-fatal",
+      .default = "Unknown"
+    )
+  )
+
+write_rds(attacks, "data/attacks.rds")
+```
+
+```{r}
+# Count recorded shark attacks per country
+country_counts <- attacks |>
+  filter(!is.na(Country_lower)) |>
+  count(Country_lower, name = "attacks")
+
+# Join counts onto world map polygon coordinates
+map_data("world") |>
+  mutate(Country_lower = str_to_lower(region)) |>
+  left_join(country_counts, by = "Country_lower") |>
+  ggplot(aes(x = long, y = lat, group = group, fill = attacks)) +
+  geom_polygon(color = "white", linewidth = 0.1) +
+  coord_quickmap()
+```
+
